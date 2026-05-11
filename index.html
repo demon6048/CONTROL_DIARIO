@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Control Diario</title>
-    <!-- VERSIÓN DEFINITIVA: AUTO-SYNC, BLINDAJE ANTI-ZOMBIES E INDICADOR DE GUARDADO -->
+    <!-- VERSIÓN DEFINITIVA 2.2: LIMPIEZA DE BOTONES -->
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2310b981'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
     
@@ -23,7 +23,7 @@
         @keyframes flash-red { 0% { background-color: #b91c1c; } 50% { background-color: #7f1d1d; } 100% { background-color: #b91c1c; } }
         .alarm-flashing { animation: flash-red 1s infinite; }
         #loading-overlay { backdrop-filter: blur(4px); }
-        .sync-saving { color: #4ade80 !important; } /* Verde para indicar guardado */
+        .sync-saving { color: #4ade80 !important; }
     </style>
 </head>
 <body class="bg-[#0f1115] text-slate-200 font-sans h-screen flex flex-col overflow-hidden selection:bg-blue-500/30 text-left">
@@ -116,10 +116,10 @@
     <main class="flex-1 overflow-x-hidden overflow-y-auto p-3 md:p-6 flex flex-col custom-scrollbar bg-[#0f1115]">
         <div class="flex flex-col gap-4 md:gap-5 w-full max-w-[1300px] mx-auto flex-1 pb-4" id="kanban-board"></div>
         
-        <!-- FIRMA DEL AUTOR -->
+        <!-- FIRMA DEL AUTOR CON VERSIÓN PARA CONTROL DE CACHÉ -->
         <div class="w-full text-center pt-6 pb-2 shrink-0">
             <span class="text-white/40 hover:text-white/90 transition-colors duration-300 text-[10px] md:text-xs font-mono tracking-widest uppercase select-none">
-                j. Vizcarra.
+                j. Vizcarra. (v2.2)
             </span>
         </div>
     </main>
@@ -153,14 +153,14 @@
     <div id="obs-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex justify-center items-center backdrop-blur-sm p-4 text-left">
         <div class="bg-[#161b22] border border-gray-700 rounded-xl w-full max-w-lg p-5 md:p-6 shadow-2xl transform transition-all my-auto">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg md:text-xl font-bold text-white uppercase tracking-widest text-xs">📝 Añadir Observación</h2>
+                <h2 class="text-lg md:text-xl font-bold text-white uppercase tracking-widest text-xs">📝 Añadir Observación / Nota</h2>
                 <button type="button" onclick="closeObsModal()" class="text-slate-400 hover:text-white p-1 transition-colors"><i class="fas fa-times text-xl"></i></button>
             </div>
             <form id="obs-form" class="space-y-4">
                 <input type="hidden" id="obs-task-id">
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1 uppercase tracking-wider text-[10px]" id="obs-task-title">Tarea</label>
-                    <textarea id="obs-text" rows="4" placeholder="Escribe aquí las observaciones, detalles o notas finales sobre esta tarea..." class="w-full bg-[#0f1115] border border-cyan-500/50 rounded-lg px-3 py-3 text-white focus:border-cyan-400 outline-none transition-colors shadow-inner text-sm custom-scrollbar"></textarea>
+                    <textarea id="obs-text" rows="4" placeholder="Escribe aquí las observaciones, detalles o notas finales..." class="w-full bg-[#0f1115] border border-cyan-500/50 rounded-lg px-3 py-3 text-white focus:border-cyan-400 outline-none transition-colors shadow-inner text-sm custom-scrollbar"></textarea>
                 </div>
                 <div class="flex justify-end pt-2">
                     <button type="button" onclick="closeObsModal()" class="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors mr-2">Cancelar</button>
@@ -204,10 +204,11 @@
                 <input type="hidden" id="edit-task-id" value="">
                 <div>
                     <label class="block font-semibold text-slate-400 mb-2 uppercase tracking-wider text-[10px]">¿Qué deseas añadir?</label>
-                    <div class="flex gap-2">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <button type="button" onclick="setTaskType('normal')" id="btn-type-normal" class="flex-1 py-2.5 rounded border border-cyan-500 bg-cyan-500/20 text-cyan-300 text-xs font-bold transition-all shadow-inner">💼 Tarea</button>
                         <button type="button" onclick="setTaskType('urgente')" id="btn-type-urgente" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all">🔥 Urgente</button>
                         <button type="button" onclick="setTaskType('compra')" id="btn-type-compra" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all">🛒 Compra</button>
+                        <button type="button" onclick="setTaskType('cobrar')" id="btn-type-cobrar" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all">💸 Cobrar</button>
                     </div>
                     <input type="hidden" id="task-type" value="normal">
                 </div>
@@ -252,7 +253,6 @@
         // --- ESTADO Y DATOS LOCALES ---
         let currentView = 'dashboard'; 
         let tasks = JSON.parse(localStorage.getItem('kanban_tasks')) || [];
-        // Filtro anti-zombies para tareas eliminadas
         let deletedTaskIds = JSON.parse(localStorage.getItem('kanban_deleted')) || [];
 
         // --- CONFIGURACIÓN DINÁMICA ---
@@ -295,6 +295,7 @@
             { id: 'Pendientes', title: '📋 PENDIENTES / OTROS', bg: 'bg-[#1a1a1a]' },
             { id: 'Compras', title: '🛒 PARA COMPRAR', bg: 'bg-[#1e1a24]' },
             { id: 'Por Cobrar', title: '💸 POR COBRAR', bg: 'bg-[#2a2416]' },
+            { id: 'Ya Cobrados', title: '💰 YA COBRADOS', bg: 'bg-[#162a18]' },
             { id: 'Completadas', title: '✅ COMPLETADAS', bg: 'bg-[#161f18]' }
         ];
 
@@ -311,13 +312,11 @@
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
-            // Una vez inicializado, quitamos los "escuchadores" para no sobrecargar la app
             document.removeEventListener('click', initAudioContext);
             document.removeEventListener('touchstart', initAudioContext);
             document.removeEventListener('keydown', initAudioContext);
         }
 
-        // Armamos el audio con cualquier interacción del usuario (Vital para celulares y PC)
         document.addEventListener('click', initAudioContext);
         document.addEventListener('touchstart', initAudioContext);
         document.addEventListener('keydown', initAudioContext);
@@ -326,14 +325,12 @@
             if (!audioCtx) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
 
-            // Función para tocar un tono corto
             const playTone = (freq, startTime, duration) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = 'square'; // Sonido digital clásico
+                osc.type = 'square'; 
                 osc.frequency.value = freq;
                 
-                // Efecto de entrada y salida suave para que no "chasquee" el altavoz
                 gain.gain.setValueAtTime(0, startTime);
                 gain.gain.linearRampToValueAtTime(0.1, startTime + 0.01);
                 gain.gain.setValueAtTime(0.1, startTime + duration - 0.02);
@@ -346,7 +343,6 @@
             };
 
             const now = audioCtx.currentTime;
-            // Clásico doble bip de despertador: (pi-pip)
             playTone(900, now, 0.12);
             playTone(900, now + 0.25, 0.12);
         }
@@ -357,11 +353,9 @@
                 document.getElementById('alarm-task-title').innerText = title;
                 banner.classList.remove('hidden');
                 
-                // Sonar el primer aviso inmediatamente
                 playAlarmSound();
                 
                 if (!beepInterval) {
-                    // Repetir el sonido cada 2 segundos mientras el banner esté visible
                     beepInterval = setInterval(() => {
                         playAlarmSound();
                     }, 2000);
@@ -466,16 +460,13 @@
                 if(Array.isArray(data)) {
                     const now = Date.now();
                     
-                    // Limpiar filtro Anti-Zombies (borrar IDs viejos de más de 30 mins)
                     deletedTaskIds = deletedTaskIds.filter(d => now - d.time < 1800000);
                     localStorage.setItem('kanban_deleted', JSON.stringify(deletedTaskIds));
                     const justDeletedIds = deletedTaskIds.map(d => d.id);
 
-                    // Filtrar datos que vienen del servidor para quitar los eliminados recientes (anti-zombie)
                     const validServerData = data.filter(serverTask => !justDeletedIds.includes(serverTask.id));
 
                     const mergedTasks = validServerData.map(serverTask => {
-                        // Arreglar fechas
                         if (serverTask.date && serverTask.date.includes('T')) serverTask.date = serverTask.date.split('T')[0];
                         if (serverTask.time && serverTask.time.includes('T')) serverTask.time = serverTask.time.split('T')[1].substring(0, 5);
                         else if (serverTask.time && serverTask.time.length > 5) serverTask.time = serverTask.time.substring(0, 5);
@@ -483,9 +474,6 @@
                         const localTask = tasks.find(t => t.id === serverTask.id);
                         if (localTask) {
                             if (localTask.alarmStopped) serverTask.alarmStopped = true;
-                            
-                            // BLINDAJE ANTI-SOBREESCRITURA (RACE CONDITION)
-                            // Si el usuario modificó esta tarea en los últimos 2 minutos, Google Sheets no la sobreescribe.
                             if (localTask.lastModified && (now - localTask.lastModified < 120000)) {
                                 return localTask;
                             }
@@ -493,7 +481,6 @@
                         return serverTask;
                     });
 
-                    // Identificar si tenemos tareas NUEVAS locales que el servidor aún no tiene y las preservamos
                     const serverIds = mergedTasks.map(t => t.id);
                     const pendingLocalTasks = tasks.filter(t => !serverIds.includes(t.id) && t.lastModified && (now - t.lastModified < 120000));
 
@@ -510,7 +497,6 @@
         }
 
         function sendToGoogleSheets(taskData) {
-            // Indicador visual de guardado (Gira el icono en verde)
             const icon = document.getElementById('sync-icon');
             if(icon) {
                 icon.classList.add('animate-spin', 'sync-saving');
@@ -522,7 +508,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(taskData)
             }).then(() => {
-                // Al terminar de enviar, detenemos la animación tras 1 segundo
                 setTimeout(() => {
                     if(icon) icon.classList.remove('animate-spin', 'sync-saving');
                 }, 1000);
@@ -543,7 +528,6 @@
             const icon = document.getElementById('sync-icon');
             if(icon) icon.classList.add('animate-spin'); 
             
-            // Si el usuario hizo click a propósito, mostramos la pantalla de carga para que sepa que está forzando todo
             if (isManualClick) {
                 document.getElementById('loading-overlay').style.display = 'flex';
             }
@@ -553,7 +537,6 @@
             });
         }
 
-        // AUTO-SYNC EN SEGUNDO PLANO CADA 60 SEGUNDOS
         setInterval(() => manualSync(false), 60000);
 
         function toggleFullScreen() {
@@ -584,15 +567,15 @@
             
             document.getElementById('stat-pending').innerText = tasks.filter(t => t.status === 'Pendientes' || t.status === 'Prioridad Alta').length;
             document.getElementById('stat-progress').innerText = tasks.filter(t => t.status === 'En Proceso').length;
-            document.getElementById('stat-completed').innerText = tasks.filter(t => t.status === 'Completadas' && t.category !== 'Compras' && t.category !== 'Por Cobrar').length;
+            document.getElementById('stat-completed').innerText = tasks.filter(t => t.status === 'Completadas').length;
 
             let visibleColumns = [];
             if (currentView === 'dashboard') {
-                visibleColumns = COLUMNS.filter(c => c.id !== 'Compras' && c.id !== 'Completadas' && c.id !== 'Por Cobrar'); 
+                visibleColumns = COLUMNS.filter(c => c.id !== 'Compras' && c.id !== 'Completadas' && c.id !== 'Por Cobrar' && c.id !== 'Ya Cobrados'); 
             } else if (currentView === 'shopping') {
                 visibleColumns = COLUMNS.filter(c => c.id === 'Compras'); 
             } else if (currentView === 'cobrar') {
-                visibleColumns = COLUMNS.filter(c => c.id === 'Por Cobrar'); 
+                visibleColumns = COLUMNS.filter(c => c.id === 'Por Cobrar' || c.id === 'Ya Cobrados'); 
             } else if (currentView === 'completed') {
                 visibleColumns = COLUMNS.filter(c => c.id === 'Completadas'); 
             }
@@ -602,7 +585,6 @@
                 
                 let titleText = col.title;
                 if (currentView === 'shopping') titleText = '🛒 TU LISTA DE COMPRAS';
-                if (currentView === 'cobrar') titleText = '💸 CUENTAS POR COBRAR';
                 if (currentView === 'completed') titleText = '✅ TAREAS FINALIZADAS';
 
                 let colHTML = `<div class="w-full flex flex-col bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden shadow-lg mb-4 text-left font-semibold">
@@ -618,11 +600,24 @@
 
                 colTasks.forEach(task => {
                     const isCompra = task.category === 'Compras' || task.status === 'Compras';
-                    const isCobrar = task.category === 'Por Cobrar' || task.status === 'Por Cobrar';
+                    const isCobrar = task.category === 'Por Cobrar' || task.status === 'Por Cobrar' || task.status === 'Ya Cobrados';
                     const statusColor = task.progress === 100 ? 'bg-green-500' : (isCompra ? 'bg-purple-500' : (isCobrar ? 'bg-amber-500' : 'bg-cyan-500'));
                     
                     const isExpanded = currentView === 'completed' || task.progress === 100;
-                    const descHTML = task.desc ? `<div class="text-[10px] text-slate-400 text-left mt-1.5 ${isExpanded ? 'whitespace-pre-wrap' : 'truncate'} leading-relaxed bg-[#0f1115] p-2 rounded border border-gray-800/50">${task.desc}</div>` : '';
+                    
+                    let cleanDesc = task.desc || "";
+                    let paymentDateDisplay = "";
+                    
+                    if (isCobrar && task.status === 'Ya Cobrados') {
+                        const match = cleanDesc.match(/💰 PAGADO EL: (.*)/);
+                        if (match) {
+                            const paymentInfo = match[1];
+                            cleanDesc = cleanDesc.replace(/\n\n💰 PAGADO EL:.*$/, '').trim();
+                            paymentDateDisplay = `<div class="text-[10px] text-green-400 mt-2 font-bold flex items-center gap-1.5 bg-green-900/20 p-2 rounded border border-green-800/50 w-fit"><i class="fas fa-check-circle"></i> Pagado el ${paymentInfo}</div>`;
+                        }
+                    }
+                    
+                    const descHTML = cleanDesc ? `<div class="text-[10px] text-slate-400 text-left mt-1.5 ${isExpanded ? 'whitespace-pre-wrap' : 'truncate'} leading-relaxed bg-[#0f1115] p-2 rounded border border-gray-800/50">${cleanDesc}</div>` : '';
 
                     let actionButtons = '';
                     if (isCompra) {
@@ -671,14 +666,15 @@
                             <i class="fas fa-pencil-alt text-xs"></i>
                         </button>
 
-                        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg ${task.priority === 'Alta' ? 'bg-red-500' : (isCompra ? 'bg-purple-500' : (isCobrar ? 'bg-amber-500' : (task.progress === 100 ? 'bg-green-500' : 'bg-cyan-500')))}"></div>
-                        <div class="flex-1 pl-2 pr-16 w-full md:w-auto min-w-0 text-left">
+                        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg ${task.priority === 'Alta' ? 'bg-red-500' : (isCompra ? 'bg-purple-500' : (isCobrar ? (task.progress === 100 ? 'bg-green-500' : 'bg-amber-500') : (task.progress === 100 ? 'bg-green-500' : 'bg-cyan-500')))}"></div>
+                        <div class="flex-1 pl-2 pr-20 w-full md:w-auto min-w-0 text-left">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[9px] font-bold uppercase text-slate-300 bg-[#0f1115] px-1.5 py-0.5 rounded border border-gray-800/50">${task.category}</span>
-                                <span class="text-[9px] font-bold uppercase ${task.priority === 'Alta' ? 'text-red-400' : (isCompra ? 'text-purple-400' : (isCobrar ? 'text-amber-400' : (task.progress === 100 ? 'text-green-400' : 'text-cyan-400')))}">${task.priority}</span>
+                                <span class="text-[9px] font-bold uppercase ${task.priority === 'Alta' ? 'text-red-400' : (isCompra ? 'text-purple-400' : (isCobrar ? (task.progress === 100 ? 'text-green-400' : 'text-amber-400') : (task.progress === 100 ? 'text-green-400' : 'text-cyan-400')))}">${task.priority}</span>
                             </div>
                             <h3 class="font-bold text-white text-base md:text-[17px] truncate text-left ${task.progress === 100 ? 'line-through text-slate-500' : ''}">${task.title}</h3>
                             ${descHTML}
+                            ${paymentDateDisplay}
                         </div>
                         <div class="bg-[#0f1115] p-2 rounded-md flex flex-row md:flex-col items-center justify-center gap-3 md:gap-0.5 border border-gray-800 min-w-[120px] shrink-0 text-center text-xs hidden md:flex">
                             <div class="text-slate-400 font-semibold">${task.date}</div>
@@ -687,7 +683,7 @@
                         <div class="w-full md:w-[320px] flex flex-col shrink-0 self-center">
                             <div class="flex justify-between items-end mb-1">
                                 <span class="text-[9px] font-bold text-slate-200 uppercase tracking-widest">${isCompra ? 'Estado de Compra' : (isCobrar ? 'Estado de Deuda' : 'Avance')}</span>
-                                <span class="text-[10px] font-bold font-mono ${isCompra ? 'text-purple-400' : (isCobrar ? 'text-amber-400' : (task.progress === 100 ? 'text-green-400' : 'text-cyan-400'))}">${task.progress}%</span>
+                                <span class="text-[10px] font-bold font-mono ${isCompra ? 'text-purple-400' : (isCobrar ? (task.progress === 100 ? 'text-green-400' : 'text-amber-400') : (task.progress === 100 ? 'text-green-400' : 'text-cyan-400'))}">${task.progress}%</span>
                             </div>
                             <div class="w-full h-1 bg-[#0f1115] rounded-full overflow-hidden mb-2 shadow-inner">
                                 <div class="h-full transition-all duration-500 ${statusColor}" style="width: ${task.progress}%"></div>
@@ -707,14 +703,28 @@
         function updateTaskProgress(id, val) {
             const task = tasks.find(t => t.id === id);
             if(task) {
-                task.lastModified = Date.now(); // SELLO DE TIEMPO
+                task.lastModified = Date.now(); 
 
                 if(task.category === 'Compras' || task.status === 'Compras') {
                     task.progress = val;
                     task.status = 'Compras'; 
-                } else if(task.category === 'Por Cobrar' || task.status === 'Por Cobrar') {
+                } else if(task.category === 'Por Cobrar' || task.status === 'Por Cobrar' || task.status === 'Ya Cobrados') {
                     task.progress = val;
-                    task.status = 'Por Cobrar'; 
+                    if(val === 100) {
+                        task.status = 'Ya Cobrados';
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('es-ES');
+                        const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                        if (!task.desc) task.desc = "";
+                        if (!task.desc.includes("💰 PAGADO EL:")) {
+                            task.desc += `\n\n💰 PAGADO EL: ${dateStr} a las ${timeStr}`;
+                        }
+                    } else {
+                        task.status = 'Por Cobrar';
+                        if (task.desc) {
+                            task.desc = task.desc.replace(/\n\n💰 PAGADO EL:.*/g, '').trim();
+                        }
+                    }
                 } else {
                     task.progress = val;
                     if(val === 100) task.status = 'Completadas';
@@ -733,7 +743,6 @@
             if(confirm("¿Estás seguro de eliminar este registro?")) {
                 tasks = tasks.filter(t => t.id !== id);
                 
-                // Guardar en Anti-Zombies
                 deletedTaskIds.push({id: id, time: Date.now()});
                 localStorage.setItem('kanban_deleted', JSON.stringify(deletedTaskIds));
                 
@@ -766,9 +775,20 @@
             if(obsText) {
                 const task = tasks.find(t => t.id === id);
                 if(task) {
-                    task.lastModified = Date.now(); // SELLO DE TIEMPO
-                    const prefix = task.desc ? task.desc + "\n\n" : "";
-                    task.desc = prefix + "📌 OBSERVACIÓN: " + obsText;
+                    task.lastModified = Date.now(); 
+                    
+                    // Si el texto ya tiene el sello de pago, lo quitamos temporalmente para no ensuciar la descripción
+                    let cleanDesc = task.desc || "";
+                    let paymentStamp = "";
+                    const match = cleanDesc.match(/\n\n💰 PAGADO EL:.*/);
+                    if (match) {
+                        paymentStamp = match[0];
+                        cleanDesc = cleanDesc.replace(/\n\n💰 PAGADO EL:.*/, '').trim();
+                    }
+
+                    const prefix = cleanDesc ? cleanDesc + "\n\n" : "";
+                    task.desc = prefix + "📌 NOTA: " + obsText + paymentStamp; // Añadimos la nota y volvemos a pegar el sello al final
+                    
                     saveTasks();
                     renderBoard();
                     sendToGoogleSheets(task); 
@@ -778,18 +798,21 @@
         });
 
         // ==========================================
-        // CREACIÓN Y EDICIÓN
+        // CREACIÓN Y EDICIÓN (CÓDIGO BLINDADO)
         // ==========================================
         window.editTask = function(id) {
             try {
-                // 1. Buscamos la tarea de forma segura
                 const task = tasks.find(t => String(t.id) === String(id));
                 if(!task) return;
 
-                // 2. Rellenamos TODOS los datos ANTES de mostrar la ventana
                 document.getElementById('edit-task-id').value = task.id;
                 document.getElementById('task-title').value = task.title || "";
-                document.getElementById('task-desc').value = task.desc || "";
+                
+                // Mostrar descripción limpia sin el sello de pagado para no confundir en el editor
+                let cleanDesc = task.desc || "";
+                cleanDesc = cleanDesc.replace(/\n\n💰 PAGADO EL:.*/, '').trim();
+                document.getElementById('task-desc').value = cleanDesc;
+                
                 document.getElementById('task-cat').value = task.category || "General";
                 
                 if (task.date) document.getElementById('task-date').value = task.date.split('T')[0];
@@ -798,13 +821,11 @@
                 if (task.time) document.getElementById('task-time').value = task.time.substring(0, 5);
                 else document.getElementById('task-time').value = "";
 
-                // 3. Ajustamos el estilo de los botones rápidos
                 if (task.category === 'Compras' || task.status === 'Compras') setTaskType('compra');
-                else if (task.category === 'Por Cobrar' || task.status === 'Por Cobrar') setTaskType('cobrar');
+                else if (task.category === 'Por Cobrar' || task.status === 'Por Cobrar' || task.status === 'Ya Cobrados') setTaskType('cobrar');
                 else if (task.priority === 'Alta') setTaskType('urgente');
                 else setTaskType('normal');
 
-                // 4. Mostramos la ventana y cambiamos el título
                 document.getElementById('modal-title-text').innerText = "Editar Registro";
                 document.getElementById('task-modal').classList.remove('hidden');
 
@@ -823,27 +844,26 @@
             const titleLabel = document.getElementById('label-title');
             
             [btnNormal, btnUrgente, btnCompra, btnCobrar].forEach(btn => {
-                btn.className = "flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all";
+                if(btn) btn.className = "flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all";
             });
             
-            if (type === 'normal') {
+            if (type === 'normal' && btnNormal) {
                 btnNormal.className = "flex-1 py-2.5 rounded border border-cyan-500 bg-cyan-500/20 text-cyan-300 text-xs font-bold transition-all shadow-inner";
-                catContainer.style.display = 'block';
-                titleLabel.innerText = "Título de la Tarea";
-            } else if (type === 'urgente') {
+                if(catContainer) catContainer.style.display = 'block';
+                if(titleLabel) titleLabel.innerText = "Título de la Tarea";
+            } else if (type === 'urgente' && btnUrgente) {
                 btnUrgente.className = "flex-1 py-2.5 rounded border border-red-500 bg-red-500/20 text-red-300 text-xs font-bold transition-all shadow-inner";
-                catContainer.style.display = 'block';
-                titleLabel.innerText = "Tarea Urgente";
-            } else if (type === 'compra') {
+                if(catContainer) catContainer.style.display = 'block';
+                if(titleLabel) titleLabel.innerText = "Tarea Urgente";
+            } else if (type === 'compra' && btnCompra) {
                 btnCompra.className = "flex-1 py-2.5 rounded border border-purple-500 bg-purple-500/20 text-purple-300 text-xs font-bold transition-all shadow-inner";
-                catContainer.style.display = 'none'; 
-                titleLabel.innerText = "Artículo a Comprar";
-            } else if (type === 'cobrar') {
+                if(catContainer) catContainer.style.display = 'none'; 
+                if(titleLabel) titleLabel.innerText = "Artículo a Comprar";
+            } else if (type === 'cobrar' && btnCobrar) {
                 btnCobrar.className = "flex-1 py-2.5 rounded border border-amber-500 bg-amber-500/20 text-amber-300 text-xs font-bold transition-all shadow-inner";
-                catContainer.style.display = 'none'; 
-                titleLabel.innerText = "Cliente / Servicio (Deuda)";
+                if(catContainer) catContainer.style.display = 'none'; 
+                if(titleLabel) titleLabel.innerText = "Cliente / Servicio (Deuda)";
             }
-            // (Eliminado el "focus" forzoso aquí para que no salte el teclado al Editar)
         }
 
         function openModal() {
@@ -859,7 +879,6 @@
             document.getElementById('task-date').value = now.toISOString().split('T')[0];
             document.getElementById('task-time').value = now.toTimeString().slice(0,5);
             
-            // Aquí sí aplicamos el focus, porque es un registro nuevo y queremos escribir rápido
             setTimeout(() => document.getElementById('task-title').focus(), 100);
         }
 
@@ -905,16 +924,25 @@
                 const t = tasks.find(t => t.id === editId);
                 if (t) {
                     t.title = document.getElementById('task-title').value;
-                    t.desc = document.getElementById('task-desc').value;
+                    
+                    // Recuperar el sello de pago si existe para no borrarlo al editar
+                    let oldDesc = t.desc || "";
+                    let paymentStamp = "";
+                    const match = oldDesc.match(/\n\n💰 PAGADO EL:.*/);
+                    if (match) paymentStamp = match[0];
+
+                    t.desc = document.getElementById('task-desc').value + paymentStamp;
                     t.category = cat;
                     t.priority = prio;
                     t.date = document.getElementById('task-date').value;
                     t.time = document.getElementById('task-time').value;
-                    t.lastModified = Date.now(); // SELLO DE TIEMPO
+                    t.lastModified = Date.now(); 
 
                     if (t.progress < 100 && t.category !== 'Compras' && t.category !== 'Por Cobrar') t.status = status;
                     else if (t.category === 'Compras') t.status = 'Compras';
-                    else if (t.category === 'Por Cobrar') t.status = 'Por Cobrar';
+                    else if (t.category === 'Por Cobrar') {
+                        t.status = t.progress === 100 ? 'Ya Cobrados' : 'Por Cobrar';
+                    }
 
                     saveTasks();
                     sendToGoogleSheets(t); 
@@ -931,7 +959,7 @@
                     date: document.getElementById('task-date').value || new Date().toISOString().split('T')[0],
                     time: document.getElementById('task-time').value || new Date().toTimeString().slice(0,5),
                     alarmStopped: false,
-                    lastModified: Date.now() // SELLO DE TIEMPO
+                    lastModified: Date.now() 
                 };
                 
                 tasks.push(newTask);
