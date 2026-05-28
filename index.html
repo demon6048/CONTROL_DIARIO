@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Control Diario</title>
-    <!-- VERSIÓN DEFINITIVA 2.2: LIMPIEZA DE BOTONES -->
+    <!-- VERSIÓN DEFINITIVA 2.3: MÓDULO ANOTACIONES Y BARRA DE PROGRESO ARREGLADA -->
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2310b981'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
     
@@ -108,6 +108,9 @@
         <button onclick="switchView('cobrar')" id="tab-cobrar" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
             <i class="fas fa-hand-holding-usd"></i> Por Cobrar
         </button>
+        <button onclick="switchView('titles')" id="tab-titles" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
+            <i class="fas fa-bookmark"></i> Anotaciones
+        </button>
         <button onclick="switchView('completed')" id="tab-completed" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
             <i class="fas fa-check-double"></i> Completadas
         </button>
@@ -119,7 +122,7 @@
         <!-- FIRMA DEL AUTOR CON VERSIÓN PARA CONTROL DE CACHÉ -->
         <div class="w-full text-center pt-6 pb-2 shrink-0">
             <span class="text-white/40 hover:text-white/90 transition-colors duration-300 text-[10px] md:text-xs font-mono tracking-widest uppercase select-none">
-                j. Vizcarra. (v2.2)
+                j. Vizcarra. (v2.3)
             </span>
         </div>
     </main>
@@ -204,11 +207,12 @@
                 <input type="hidden" id="edit-task-id" value="">
                 <div>
                     <label class="block font-semibold text-slate-400 mb-2 uppercase tracking-wider text-[10px]">¿Qué deseas añadir?</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <button type="button" onclick="setTaskType('normal')" id="btn-type-normal" class="flex-1 py-2.5 rounded border border-cyan-500 bg-cyan-500/20 text-cyan-300 text-xs font-bold transition-all shadow-inner">💼 Tarea</button>
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
+                        <button type="button" onclick="setTaskType('normal')" id="btn-type-normal" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all">💼 Tarea</button>
                         <button type="button" onclick="setTaskType('urgente')" id="btn-type-urgente" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all">🔥 Urgente</button>
                         <button type="button" onclick="setTaskType('compra')" id="btn-type-compra" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all">🛒 Compra</button>
                         <button type="button" onclick="setTaskType('cobrar')" id="btn-type-cobrar" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all">💸 Cobrar</button>
+                        <button type="button" onclick="setTaskType('titulo')" id="btn-type-titulo" class="flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all col-span-2 lg:col-span-1">📝 Nota</button>
                     </div>
                     <input type="hidden" id="task-type" value="normal">
                 </div>
@@ -289,6 +293,7 @@
             manualSync(false); 
         }
 
+        // Se añadió la categoría de Anotaciones/Títulos
         const COLUMNS = [
             { id: 'Prioridad Alta', title: '🔥 PRIORIDAD ALTA', bg: 'bg-[#1f1616]' },
             { id: 'En Proceso', title: '⚙️ EN PROCESO', bg: 'bg-[#161c22]' },
@@ -296,6 +301,7 @@
             { id: 'Compras', title: '🛒 PARA COMPRAR', bg: 'bg-[#1e1a24]' },
             { id: 'Por Cobrar', title: '💸 POR COBRAR', bg: 'bg-[#2a2416]' },
             { id: 'Ya Cobrados', title: '💰 YA COBRADOS', bg: 'bg-[#162a18]' },
+            { id: 'Títulos', title: '📌 ANOTACIONES Y TÍTULOS', bg: 'bg-[#181622]' },
             { id: 'Completadas', title: '✅ COMPLETADAS', bg: 'bg-[#161f18]' }
         ];
 
@@ -422,6 +428,7 @@
             const tabDash = document.getElementById('tab-dashboard');
             const tabShop = document.getElementById('tab-shopping');
             const tabCobrar = document.getElementById('tab-cobrar');
+            const tabTitles = document.getElementById('tab-titles');
             const tabComp = document.getElementById('tab-completed');
             const statsContainer = document.getElementById('stats-container');
             
@@ -430,6 +437,7 @@
             tabDash.className = inactiveClass;
             tabShop.className = inactiveClass;
             if(tabCobrar) tabCobrar.className = inactiveClass;
+            if(tabTitles) tabTitles.className = inactiveClass;
             if(tabComp) tabComp.className = inactiveClass;
 
             if (view === 'dashboard') {
@@ -440,6 +448,9 @@
                 statsContainer.style.display = 'none'; 
             } else if (view === 'cobrar') {
                 if(tabCobrar) tabCobrar.className = "px-5 py-3 text-sm font-bold border-b-2 border-amber-500 text-amber-400 transition-colors flex items-center gap-2 whitespace-nowrap bg-[#0f1115]";
+                statsContainer.style.display = 'none'; 
+            } else if (view === 'titles') {
+                if(tabTitles) tabTitles.className = "px-5 py-3 text-sm font-bold border-b-2 border-indigo-500 text-indigo-400 transition-colors flex items-center gap-2 whitespace-nowrap bg-[#0f1115]";
                 statsContainer.style.display = 'none'; 
             } else if (view === 'completed') {
                 if(tabComp) tabComp.className = "px-5 py-3 text-sm font-bold border-b-2 border-green-500 text-green-400 transition-colors flex items-center gap-2 whitespace-nowrap bg-[#0f1115]";
@@ -571,11 +582,13 @@
 
             let visibleColumns = [];
             if (currentView === 'dashboard') {
-                visibleColumns = COLUMNS.filter(c => c.id !== 'Compras' && c.id !== 'Completadas' && c.id !== 'Por Cobrar' && c.id !== 'Ya Cobrados'); 
+                visibleColumns = COLUMNS.filter(c => c.id !== 'Compras' && c.id !== 'Completadas' && c.id !== 'Por Cobrar' && c.id !== 'Ya Cobrados' && c.id !== 'Títulos'); 
             } else if (currentView === 'shopping') {
                 visibleColumns = COLUMNS.filter(c => c.id === 'Compras'); 
             } else if (currentView === 'cobrar') {
                 visibleColumns = COLUMNS.filter(c => c.id === 'Por Cobrar' || c.id === 'Ya Cobrados'); 
+            } else if (currentView === 'titles') {
+                visibleColumns = COLUMNS.filter(c => c.id === 'Títulos'); 
             } else if (currentView === 'completed') {
                 visibleColumns = COLUMNS.filter(c => c.id === 'Completadas'); 
             }
@@ -601,9 +614,13 @@
                 colTasks.forEach(task => {
                     const isCompra = task.category === 'Compras' || task.status === 'Compras';
                     const isCobrar = task.category === 'Por Cobrar' || task.status === 'Por Cobrar' || task.status === 'Ya Cobrados';
-                    const statusColor = task.progress === 100 ? 'bg-green-500' : (isCompra ? 'bg-purple-500' : (isCobrar ? 'bg-amber-500' : 'bg-cyan-500'));
+                    const isTitulo = task.category === 'Títulos' || task.status === 'Títulos';
                     
-                    const isExpanded = currentView === 'completed' || task.progress === 100;
+                    // Asegurar que el progreso sea un número válido para pintarlo en la barra
+                    const prog = parseInt(task.progress) || 0;
+                    const statusColor = prog === 100 ? 'bg-green-500' : (isCompra ? 'bg-purple-500' : (isCobrar ? 'bg-amber-500' : (isTitulo ? 'bg-indigo-500' : 'bg-cyan-500')));
+                    
+                    const isExpanded = currentView === 'completed' || prog === 100;
                     
                     let cleanDesc = task.desc || "";
                     let paymentDateDisplay = "";
@@ -621,7 +638,7 @@
 
                     let actionButtons = '';
                     if (isCompra) {
-                        if (task.progress === 100) {
+                        if (prog === 100) {
                             actionButtons = `
                                 <div class="flex flex-col gap-1.5 w-full">
                                     <button onclick="updateTaskProgress('${task.id}', 0)" class="w-full bg-purple-900/30 hover:bg-purple-900/50 border border-purple-500 text-[9px] py-1.5 rounded text-purple-200 transition-colors font-bold">✓ ¡Comprado! (Deshacer)</button>
@@ -631,7 +648,7 @@
                             actionButtons = `<button onclick="updateTaskProgress('${task.id}', 100)" class="w-full bg-transparent hover:bg-purple-900/20 border border-purple-900/50 text-[9px] py-1.5 rounded text-purple-400 transition-colors font-bold">Marcar como Comprado</button>`;
                         }
                     } else if (isCobrar) {
-                        if (task.progress === 100) {
+                        if (prog === 100) {
                             actionButtons = `
                                 <div class="flex flex-col gap-1.5 w-full">
                                     <button onclick="updateTaskProgress('${task.id}', 0)" class="w-full bg-amber-900/30 hover:bg-amber-900/50 border border-amber-500/50 text-[9px] py-1.5 rounded text-amber-200 transition-colors font-bold">✓ ¡Pagado! (Deshacer)</button>
@@ -640,8 +657,18 @@
                         } else {
                             actionButtons = `<button onclick="updateTaskProgress('${task.id}', 100)" class="w-full bg-transparent hover:bg-amber-900/20 border border-amber-900/50 text-[9px] py-1.5 rounded text-amber-400 transition-colors font-bold">Marcar como Pagado</button>`;
                         }
+                    } else if (isTitulo) {
+                        if (prog === 100) {
+                            actionButtons = `
+                                <div class="flex flex-col gap-1.5 w-full">
+                                    <button onclick="updateTaskProgress('${task.id}', 0)" class="w-full bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-500 text-[9px] py-1.5 rounded text-indigo-200 transition-colors font-bold">✓ Terminado/Visto (Deshacer)</button>
+                                    <button onclick="window.openObsModal('${task.id}')" class="w-full bg-blue-900/20 hover:bg-blue-900/40 border border-blue-500/50 text-[9px] py-1.5 rounded text-blue-300 transition-colors font-bold flex items-center justify-center gap-1"><i class="fas fa-edit"></i> Añadir Nota</button>
+                                </div>`;
+                        } else {
+                            actionButtons = `<button onclick="updateTaskProgress('${task.id}', 100)" class="w-full bg-transparent hover:bg-indigo-900/20 border border-indigo-900/50 text-[9px] py-1.5 rounded text-indigo-400 transition-colors font-bold">Marcar Visto/Terminado</button>`;
+                        }
                     } else {
-                        if (task.progress === 100) {
+                        if (prog === 100) {
                             actionButtons = `
                                 <div class="flex flex-col gap-1.5 w-full">
                                     <button onclick="updateTaskProgress('${task.id}', 0)" class="w-full bg-green-900/30 hover:bg-green-900/50 border border-green-500 text-[9px] py-1.5 rounded text-green-200 transition-colors font-bold">✓ Completada (Deshacer)</button>
@@ -666,13 +693,13 @@
                             <i class="fas fa-pencil-alt text-xs"></i>
                         </button>
 
-                        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg ${task.priority === 'Alta' ? 'bg-red-500' : (isCompra ? 'bg-purple-500' : (isCobrar ? (task.progress === 100 ? 'bg-green-500' : 'bg-amber-500') : (task.progress === 100 ? 'bg-green-500' : 'bg-cyan-500')))}"></div>
+                        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg ${task.priority === 'Alta' ? 'bg-red-500' : (isCompra ? 'bg-purple-500' : (isCobrar ? (prog === 100 ? 'bg-green-500' : 'bg-amber-500') : (isTitulo ? 'bg-indigo-500' : (prog === 100 ? 'bg-green-500' : 'bg-cyan-500'))))}"></div>
                         <div class="flex-1 pl-2 pr-20 w-full md:w-auto min-w-0 text-left">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[9px] font-bold uppercase text-slate-300 bg-[#0f1115] px-1.5 py-0.5 rounded border border-gray-800/50">${task.category}</span>
-                                <span class="text-[9px] font-bold uppercase ${task.priority === 'Alta' ? 'text-red-400' : (isCompra ? 'text-purple-400' : (isCobrar ? (task.progress === 100 ? 'text-green-400' : 'text-amber-400') : (task.progress === 100 ? 'text-green-400' : 'text-cyan-400')))}">${task.priority}</span>
+                                <span class="text-[9px] font-bold uppercase ${task.priority === 'Alta' ? 'text-red-400' : (isCompra ? 'text-purple-400' : (isCobrar ? (prog === 100 ? 'text-green-400' : 'text-amber-400') : (isTitulo ? 'text-indigo-400' : (prog === 100 ? 'text-green-400' : 'text-cyan-400'))))}">${task.priority}</span>
                             </div>
-                            <h3 class="font-bold text-white text-base md:text-[17px] truncate text-left ${task.progress === 100 ? 'line-through text-slate-500' : ''}">${task.title}</h3>
+                            <h3 class="font-bold text-white text-base md:text-[17px] truncate text-left ${prog === 100 ? 'line-through text-slate-500' : ''}">${task.title}</h3>
                             ${descHTML}
                             ${paymentDateDisplay}
                         </div>
@@ -682,11 +709,12 @@
                         </div>
                         <div class="w-full md:w-[320px] flex flex-col shrink-0 self-center">
                             <div class="flex justify-between items-end mb-1">
-                                <span class="text-[9px] font-bold text-slate-200 uppercase tracking-widest">${isCompra ? 'Estado de Compra' : (isCobrar ? 'Estado de Deuda' : 'Avance')}</span>
-                                <span class="text-[10px] font-bold font-mono ${isCompra ? 'text-purple-400' : (isCobrar ? (task.progress === 100 ? 'text-green-400' : 'text-amber-400') : (task.progress === 100 ? 'text-green-400' : 'text-cyan-400'))}">${task.progress}%</span>
+                                <span class="text-[9px] font-bold text-slate-200 uppercase tracking-widest">${isCompra ? 'Estado de Compra' : (isCobrar ? 'Estado de Deuda' : (isTitulo ? 'Progreso' : 'Avance'))}</span>
+                                <span class="text-[10px] font-bold font-mono ${isCompra ? 'text-purple-400' : (isCobrar ? (prog === 100 ? 'text-green-400' : 'text-amber-400') : (isTitulo ? 'text-indigo-400' : (prog === 100 ? 'text-green-400' : 'text-cyan-400')))}">${prog}%</span>
                             </div>
-                            <div class="w-full h-1 bg-[#0f1115] rounded-full overflow-hidden mb-2 shadow-inner">
-                                <div class="h-full transition-all duration-500 ${statusColor}" style="width: ${task.progress}%"></div>
+                            <!-- Barra de progreso mejorada para ser siempre visible -->
+                            <div class="w-full h-1.5 bg-gray-700/50 rounded-full overflow-hidden mb-2 shadow-inner">
+                                <div class="h-full transition-all duration-500 ${statusColor}" style="width: ${prog}%"></div>
                             </div>
                             ${actionButtons}
                         </div>
@@ -725,6 +753,9 @@
                             task.desc = task.desc.replace(/\n\n💰 PAGADO EL:.*/g, '').trim();
                         }
                     }
+                } else if(task.category === 'Títulos' || task.status === 'Títulos') {
+                    task.progress = val;
+                    task.status = 'Títulos'; 
                 } else {
                     task.progress = val;
                     if(val === 100) task.status = 'Completadas';
@@ -787,7 +818,7 @@
                     }
 
                     const prefix = cleanDesc ? cleanDesc + "\n\n" : "";
-                    task.desc = prefix + "📌 NOTA: " + obsText + paymentStamp; // Añadimos la nota y volvemos a pegar el sello al final
+                    task.desc = prefix + "📌 NOTA: " + obsText + paymentStamp; 
                     
                     saveTasks();
                     renderBoard();
@@ -823,6 +854,7 @@
 
                 if (task.category === 'Compras' || task.status === 'Compras') setTaskType('compra');
                 else if (task.category === 'Por Cobrar' || task.status === 'Por Cobrar' || task.status === 'Ya Cobrados') setTaskType('cobrar');
+                else if (task.category === 'Títulos' || task.status === 'Títulos') setTaskType('titulo');
                 else if (task.priority === 'Alta') setTaskType('urgente');
                 else setTaskType('normal');
 
@@ -840,10 +872,11 @@
             const btnUrgente = document.getElementById('btn-type-urgente');
             const btnCompra = document.getElementById('btn-type-compra');
             const btnCobrar = document.getElementById('btn-type-cobrar');
+            const btnTitulo = document.getElementById('btn-type-titulo');
             const catContainer = document.getElementById('category-container');
             const titleLabel = document.getElementById('label-title');
             
-            [btnNormal, btnUrgente, btnCompra, btnCobrar].forEach(btn => {
+            [btnNormal, btnUrgente, btnCompra, btnCobrar, btnTitulo].forEach(btn => {
                 if(btn) btn.className = "flex-1 py-2.5 rounded border border-gray-700 bg-[#0f1115] hover:bg-gray-800 text-gray-400 text-xs font-bold transition-all";
             });
             
@@ -863,6 +896,10 @@
                 btnCobrar.className = "flex-1 py-2.5 rounded border border-amber-500 bg-amber-500/20 text-amber-300 text-xs font-bold transition-all shadow-inner";
                 if(catContainer) catContainer.style.display = 'none'; 
                 if(titleLabel) titleLabel.innerText = "Cliente / Servicio (Deuda)";
+            } else if (type === 'titulo' && btnTitulo) {
+                btnTitulo.className = "flex-1 py-2.5 rounded border border-indigo-500 bg-indigo-500/20 text-indigo-300 text-xs font-bold transition-all shadow-inner";
+                if(catContainer) catContainer.style.display = 'none'; 
+                if(titleLabel) titleLabel.innerText = "Título (Película, Curso, Nota)";
             }
         }
 
@@ -873,6 +910,7 @@
             
             if (currentView === 'shopping') setTaskType('compra');
             else if (currentView === 'cobrar') setTaskType('cobrar');
+            else if (currentView === 'titles') setTaskType('titulo');
             else setTaskType('normal'); 
             
             const now = new Date();
@@ -918,6 +956,10 @@
                 prio = 'Baja'; 
                 status = 'Por Cobrar';
                 cat = 'Por Cobrar';
+            } else if (type === 'titulo') {
+                prio = 'Baja'; 
+                status = 'Títulos';
+                cat = 'Títulos';
             }
 
             if (editId) {
@@ -925,7 +967,6 @@
                 if (t) {
                     t.title = document.getElementById('task-title').value;
                     
-                    // Recuperar el sello de pago si existe para no borrarlo al editar
                     let oldDesc = t.desc || "";
                     let paymentStamp = "";
                     const match = oldDesc.match(/\n\n💰 PAGADO EL:.*/);
@@ -938,8 +979,9 @@
                     t.time = document.getElementById('task-time').value;
                     t.lastModified = Date.now(); 
 
-                    if (t.progress < 100 && t.category !== 'Compras' && t.category !== 'Por Cobrar') t.status = status;
+                    if (t.progress < 100 && t.category !== 'Compras' && t.category !== 'Por Cobrar' && t.category !== 'Títulos') t.status = status;
                     else if (t.category === 'Compras') t.status = 'Compras';
+                    else if (t.category === 'Títulos') t.status = 'Títulos';
                     else if (t.category === 'Por Cobrar') {
                         t.status = t.progress === 100 ? 'Ya Cobrados' : 'Por Cobrar';
                     }
@@ -969,6 +1011,7 @@
             
             if (type === 'compra' && currentView !== 'shopping') switchView('shopping');
             else if (type === 'cobrar' && currentView !== 'cobrar') switchView('cobrar');
+            else if (type === 'titulo' && currentView !== 'titles') switchView('titles');
             else renderBoard();
             
             closeModal();
@@ -1070,7 +1113,7 @@
             
             const prompt = `Actúa como un asistente de extracción de datos.
 Texto: "${text}". 
-Devuelve ÚNICAMENTE un objeto JSON con este formato exacto: {"title": "resumen muy corto", "desc": "detalles completos", "category": "Compras", "Por Cobrar" o "General", "priority": "Alta" o "Baja"}`;
+Devuelve ÚNICAMENTE un objeto JSON con este formato exacto: {"title": "resumen muy corto", "desc": "detalles completos", "category": "Compras", "Por Cobrar", "Títulos" o "General", "priority": "Alta" o "Baja"}`;
 
             try {
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${aiKey}`;
@@ -1095,6 +1138,7 @@ Devuelve ÚNICAMENTE un objeto JSON con este formato exacto: {"title": "resumen 
                 
                 if (data.category && data.category.toLowerCase().includes("compra")) setTaskType('compra');
                 else if (data.category && data.category.toLowerCase().includes("cobrar")) setTaskType('cobrar');
+                else if (data.category && data.category.toLowerCase().includes("título")) setTaskType('titulo');
                 else if (data.priority === "Alta") setTaskType('urgente');
                 else {
                     setTaskType('normal');
